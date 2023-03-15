@@ -5,5 +5,6 @@ void myPrintHelloMake(void) {
 
   printf("Hello makefiles!\n");
 
+//Test
   return;
 }

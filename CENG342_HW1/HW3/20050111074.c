@@ -13,11 +13,6 @@ void createVector(double **vec, int column) {
     for (i = 0; i < column; i++) {
         (*vec)[i] = ((double) rand() / RAND_MAX) * (100 - 1) + 1; 
     }
-    printf("VECTOR: \n");
-	for (i = 0; i < column; i++) {
-        printf("%.2f \n", (*vec)[i]);
-    }
-
 }
 
 void createArray(double ***arr, int row, int column) {
@@ -36,14 +31,6 @@ void createArray(double ***arr, int row, int column) {
             (*arr)[i][j] = ((double) rand() / RAND_MAX) * (100 - 1) + 1;
         }
     }
-    printf("ARRAY: \n");
-    for (i = 0; i < row; i++) {
-        for (j = 0; j < column; j++) {
-            printf("%.2f ", (*arr)[i][j]);
-        }
-        printf("\n");
-    }
-    
 }
 
 void printFile(char* f, double *arr, int size) {
@@ -59,7 +46,7 @@ void printFile(char* f, double *arr, int size) {
     fclose(file);
 }
 
-double *parallel_multiply(double **matrix, double *vector, int row, int column, int rank, int size) {
+void parallel_multiply(double **matrix, double *vector, int row, int column, int rank, int size) {
     
 	double *result = (double *) malloc(row * sizeof(double));
 
@@ -78,16 +65,25 @@ double *parallel_multiply(double **matrix, double *vector, int row, int column, 
     double *final_result = NULL;
     if (rank == 0) {
         final_result = (double *) malloc(row * sizeof(double));
+        int b = 0;
+        for(b = 0; b < row; b++){
+        	final_result[b] =0;
+		}
     }
-
-    MPI_Gather(result, row / size, MPI_DOUBLE, final_result, row / size, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-
+    
+	MPI_Barrier(MPI_COMM_WORLD);	
+    MPI_Reduce(result, final_result, row, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    
     if (rank == 0) {
         double end_time = MPI_Wtime();
         printf("Time elapsed for parallel multiplication: %f seconds\n", end_time - start_time);
     }
+    
+	int a = 0; 
+    for(a = 0; a < row; a++){
+    	printf("\nResult: %f", final_result[a]);
+	}
 
-    return final_result;
 }
 
 
@@ -103,10 +99,13 @@ int main(int argc, char **argv) {
             printf("Usage: mpirun -np <number of processes> %s <number of rows> <number of columns> <output file>\n", argv[0]);
         }
 	}
-	double **arr, *vec;
-        createArray(&arr, 1074, 1074);
-        createVector(&vec, 1074);
-        double* result = parallel_multiply(&*arr, &*vec, 1074, 1074, rank, size);
+	double **large_arr, *large_vec, **small_arr, *small_vec;
+        createArray(&large_arr, 1074, 1074);
+        createVector(&large_vec, 1074);
+    	createArray(&small_arr, 174, 174);
+        createVector(&small_vec, 174);
+        parallel_multiply(&*large_arr, &*large_vec, 1074, 1074, rank, size);
+        //parallel_multiply(&*small_arr, &*small_vec, 174, 174, rank, size);
         MPI_Finalize();
     return 0;
 }

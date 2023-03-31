@@ -51,6 +51,8 @@ double* multiply(double **matrix, double *vector, int row, int column) {
 	
     double *result = (double *)malloc(row * sizeof(double));
     int i = 0, j = 0;
+    clock_t t;
+    t = clock();
     
     for(i = 0; i < row; i++)
     {
@@ -60,7 +62,8 @@ double* multiply(double **matrix, double *vector, int row, int column) {
             result[i] += matrix[i][j] * vector[j];
         }                  
     }
-    
+    t = clock() - t;
+    printf("It took %f seconds.", ((double)t)/CLOCKS_PER_SEC);
     return result;
 
 }
